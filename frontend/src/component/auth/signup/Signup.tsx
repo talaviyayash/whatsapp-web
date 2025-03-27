@@ -3,6 +3,8 @@ import useApiHook from "@/hooks/useApiHook";
 import MUITextField from "@/shared/MUITextField";
 import { Button, Container, Typography, Card, Box } from "@mui/material";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 
 interface SubmitProps {
@@ -12,15 +14,22 @@ interface SubmitProps {
 
 const Signup = () => {
   const { api } = useApiHook();
+  const [loader, setLoader] = useState(false);
+  const router = useRouter();
+
   const onSubmit = async (data: SubmitProps) => {
-    api({
+    setLoader(true);
+    const response = await api({
       endPoint: "auth/signup",
       method: "POST",
       data,
       showToastMessage: true,
-      needLoader: true,
-      loaderName: "signup",
     });
+    setLoader(false);
+    if (response?.success) {
+      router.push("/otp-verify");
+      localStorage.setItem("opt-email", data?.email);
+    }
   };
 
   const {
@@ -124,6 +133,7 @@ const Signup = () => {
                 boxShadow: 4,
               },
             }}
+            loading={loader}
           >
             Sign Up
           </Button>

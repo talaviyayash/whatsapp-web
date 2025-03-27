@@ -3,12 +3,14 @@ import { useState, useEffect } from "react";
 import OTPInput from "react-otp-input";
 import { Button, Container, Typography, Card, Box } from "@mui/material";
 import useApiHook from "@/hooks/useApiHook";
+import { useRouter } from "next/navigation";
 
 const OTPVerify: React.FC = () => {
   const [otp, setOtp] = useState<string>("");
   const [timeLeft, setTimeLeft] = useState<number>(30);
   const [canResend, setCanResend] = useState<boolean>(false);
   const { api } = useApiHook();
+  const router = useRouter();
 
   useEffect(() => {
     if (timeLeft > 0) {
@@ -19,16 +21,26 @@ const OTPVerify: React.FC = () => {
     }
   }, [timeLeft]);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    const optEmail = localStorage.getItem("opt-email");
+    if (!optEmail) {
+      router.push("/signin");
+    }
+  }, []);
+
+  const handleSubmit = async () => {
     console.log("Entered OTP:", otp);
-    api({
+    const response = await api({
       endPoint: "auth/signin",
       method: "POST",
-      data: { email: "", otp },
+      data: { email: optEmail, otp },
       showToastMessage: true,
       needLoader: true,
       loaderName: "signin",
     });
+    router.push("/otp-verify");
+
+    console.log("response", response);
   };
 
   const handleResend = () => {
