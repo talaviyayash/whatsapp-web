@@ -1,7 +1,7 @@
-import React from "react";
-import AuthLayout from "@/layouts/AuthLayout";
+import ProtectedLayout from "@/layouts/ProtectedLayout";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import React from "react";
 
 const layout = async ({
   children,
@@ -10,13 +10,13 @@ const layout = async ({
 }>) => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
-  if (accessToken) {
-    redirect("/chat");
+  if (!accessToken) {
+    redirect("/signin");
   }
 
   return (
     <>
-      <AuthLayout>{children}</AuthLayout>
+      <ProtectedLayout>{children}</ProtectedLayout>
     </>
   );
 };

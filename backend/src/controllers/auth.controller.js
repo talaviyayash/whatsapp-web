@@ -203,4 +203,53 @@ const signinWithEmail = async (req, res) => {
   }
 };
 
-export { handleGoogleAuth, signupWithEmail, verifyOTP, signinWithEmail };
+const resendOTP = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Generate new OTP
+    const otp = generateOTP();
+    user.verificationCode = {
+      otp,
+      sendedAt: new Date(),
+    };
+    await user.save();
+
+    // Send OTP email
+    await sendEmail({
+      to: email,
+      subject: "Resend OTP",
+      text: `Your new OTP for verification is: ${otp}`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "OTP resent successfully",
+      data: {
+        email,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+export {
+  handleGoogleAuth,
+  signupWithEmail,
+  verifyOTP,
+  signinWithEmail,
+  resendOTP,
+};

@@ -29,24 +29,36 @@ const OTPVerify: React.FC = () => {
   }, []);
 
   const handleSubmit = async () => {
-    console.log("Entered OTP:", otp);
+    const optEmail = localStorage.getItem("opt-email");
     const response = await api({
-      endPoint: "auth/signin",
+      endPoint: "auth/verify-otp",
       method: "POST",
       data: { email: optEmail, otp },
       showToastMessage: true,
       needLoader: true,
       loaderName: "signin",
     });
-    router.push("/otp-verify");
+    if (response?.success) {
+      router.push("/chat");
+    }
 
     console.log("response", response);
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setOtp("");
     setTimeLeft(30);
     setCanResend(false);
+    const optEmail = localStorage.getItem("opt-email");
+    await api({
+      endPoint: "auth/resend-otp",
+      method: "POST",
+      data: { email: optEmail },
+      showToastMessage: true,
+      needLoader: true,
+      loaderName: "signin",
+    });
+
     // Call API to resend OTP
   };
 
