@@ -1,53 +1,80 @@
 "use client";
+import useApiHook from "@/hooks/useApiHook";
+import { addData } from "@/redux/slice/apiSlice";
+import { Chat, UserInfo } from "@/types/chat";
+import { getOtherUser, getUserInfo } from "@/utils/customFunc";
 import { Add, AttachFile, Send } from "@mui/icons-material";
 import {
   Box,
   Drawer,
   IconButton,
   InputAdornment,
-  Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
-import AddChat from "./AdChat";
-
-const chatList = [
-  {
-    id: 1,
-    name: "Alice",
-    lastSeen: "Online",
-    messages: [
-      { text: "Hey! How are you?", sender: "Alice" },
-      { text: "I'm good, how about you?", sender: "Me" },
-    ],
-  },
-  {
-    id: 2,
-    name: "Bob",
-    lastSeen: "Last seen 5 minutes ago",
-    messages: [
-      { text: "Let's meet tomorrow.", sender: "Bob" },
-      { text: "Sure, what time?", sender: "Me" },
-    ],
-  },
-  {
-    id: 3,
-    name: "Charlie",
-    lastSeen: "Last seen 1 hour ago",
-    messages: [
-      { text: "Check this out!", sender: "Charlie" },
-      { text: "Wow, that's cool!", sender: "Me" },
-    ],
-  },
-];
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import io from "socket.io-client";
+import AddChat from "./AddChat";
+import ChatList from "./ChatList";
+const socket = io("http://localhost:5000", {
+  transports: ["websocket"],
+});
 
 const ChatApp: React.FC = () => {
-  const [selectedChat, setSelectedChat] = useState(chatList[0]);
+  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [openModal, setOpenModal] = useState(false);
+  const dispatch = useDispatch();
+  const { api } = useApiHook();
+  const userInfo = useSelector(getUserInfo()) as UserInfo;
+  console.log("selectedChat", selectedChat);
+
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected to Socket.IO server");
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("Connection error:", error);
+    });
+
+    socket.on("message", (message) => {
+      console.log("message", message);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("message");
+    };
+  }, []);
+
+  useEffect(() => {
+    const getData = async () => {
+      const result = await api({
+        endPoint: "chat",
+        method: "GET",
+      });
+
+      if (result?.success) {
+        const checkListToSet = result?.data?.map((item: Chat) => ({
+          ...item,
+          user: getOtherUser(item?.members, userInfo?._id),
+        }));
+        setSelectedChat(checkListToSet[0]);
+        dispatch(
+          addData({
+            data: checkListToSet,
+            name: "chatList",
+          })
+        );
+      }
+    };
+    getData();
+  }, []);
 
   return (
     <Stack
@@ -88,26 +115,7 @@ const ChatApp: React.FC = () => {
           </IconButton>
         </Box>
         <Stack>
-          {chatList
-            .filter((chat) =>
-              chat.name.toLowerCase().includes(search.toLowerCase())
-            )
-            .map((chat) => (
-              <Box
-                key={chat.id}
-                p={2}
-                sx={{
-                  cursor: "pointer",
-                  backgroundColor:
-                    selectedChat.id === chat.id ? "#333" : "transparent",
-                  color: "text.primary",
-                  "&:hover": { backgroundColor: "#444" },
-                }}
-                onClick={() => setSelectedChat(chat)}
-              >
-                <Typography variant="subtitle1">{chat.name}</Typography>
-              </Box>
-            ))}
+          <ChatList />
         </Stack>
       </Drawer>
 
@@ -129,15 +137,15 @@ const ChatApp: React.FC = () => {
             backgroundColor: "background.paper",
           }}
         >
-          <Typography variant="h6">{selectedChat.name}</Typography>
+          <Typography variant="h6">{selectedChat?.user?.name}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {selectedChat.lastSeen}
+            {/* {selectedChat?.lastSeen} */}1 Hour ago
           </Typography>
         </Box>
 
         {/* Chat Messages */}
         <Stack spacing={1} flex={1} p={2} overflow="auto">
-          {selectedChat.messages.map((msg, index) => (
+          {/* {selectedChat.messages.map((msg, index) => (
             <Paper
               key={index}
               sx={{
@@ -154,7 +162,7 @@ const ChatApp: React.FC = () => {
             >
               <Typography variant="body1">{msg.text}</Typography>
             </Paper>
-          ))}
+          ))} */}
         </Stack>
 
         {/* Message Input and File Upload */}

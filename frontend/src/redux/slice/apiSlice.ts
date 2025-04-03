@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface ApiState {
+export interface ApiState {
   [key: string]: unknown;
 }
 

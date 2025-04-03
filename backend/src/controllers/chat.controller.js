@@ -16,10 +16,25 @@ const createChat = async (req, res) => {
     }
 
     const chat = await Chat.create({ members: [user._id, req.user.id] });
-    res.status(201).json(chat);
+    res
+      .status(201)
+      .json({ message: "Chat get Successfully", data: chat, success: true });
   } catch (error) {
     res.status(500).json({ message: "Error creating chat", error });
   }
 };
 
-export { createChat };
+const getAllChats = async (req, res) => {
+  try {
+    const chats = await Chat.find({ members: req.user._id })
+      .populate("members", "email name")
+      .populate("lastMessage");
+    res
+      .status(200)
+      .json({ data: chats, message: "Chat get Successfully", success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching chats", error });
+  }
+};
+
+export { createChat, getAllChats };

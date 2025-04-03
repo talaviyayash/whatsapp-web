@@ -27,14 +27,15 @@ const AddChat = ({ openModal, setOpenModal }: AddChatProps) => {
   });
 
   const onAdd = async (data: submitProps) => {
-    console.log("data", data);
     const response = await api({
       endPoint: "chat/create-chat",
       method: "POST",
       data,
       showToastMessage: true,
     });
-    console.log("response", response);
+    if (response?.success) {
+      setOpenModal(false);
+    }
   };
 
   return (

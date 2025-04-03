@@ -16,8 +16,6 @@ const handleGoogleAuth = async (req, res) => {
       const token = await user.generateAccessToken();
 
       res.cookie("accessToken", token, {
-        httpOnly: true,
-        secure: true,
         sameSite: "strict",
         maxAge: SEVEN_DAYS,
       });
@@ -41,8 +39,6 @@ const handleGoogleAuth = async (req, res) => {
     const token = await user.generateAccessToken();
 
     res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: true,
       sameSite: "strict",
       maxAge: SEVEN_DAYS,
     });
@@ -135,8 +131,6 @@ const verifyOTP = async (req, res) => {
     const token = await user.generateAccessToken();
 
     res.cookie("accessToken", token, {
-      httpOnly: true,
-      secure: true,
       sameSite: "strict",
       maxAge: SEVEN_DAYS,
     });

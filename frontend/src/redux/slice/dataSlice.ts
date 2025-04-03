@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface DataState {
+export interface DataState {
   [key: string]: unknown; // Allows dynamic keys
 }
 

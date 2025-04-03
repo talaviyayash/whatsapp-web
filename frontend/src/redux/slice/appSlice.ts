@@ -4,7 +4,7 @@ interface FlagState {
   [key: string]: unknown; // Dynamic key-value pairs
 }
 
-interface AppState {
+export interface AppState {
   flag: FlagState;
   userProfile?: unknown; // Optional property to allow adding userProfile dynamically
 }

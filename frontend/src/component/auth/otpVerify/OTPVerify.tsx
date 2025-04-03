@@ -41,8 +41,6 @@ const OTPVerify: React.FC = () => {
     if (response?.success) {
       router.push("/chat");
     }
-
-    console.log("response", response);
   };
 
   const handleResend = async () => {

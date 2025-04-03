@@ -1,10 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import loaderReducer from "./slice/loaderSlice";
-import appReducer from "./slice/appSlice";
-import apiReducer from "./slice/apiSlice";
-import formReducer from "./slice/formSlice";
-import modalReducer from "./slice/modalSlice";
-import dataReducer from "./slice/dataSlice";
+import loaderReducer, { LoaderState } from "./slice/loaderSlice";
+import appReducer, { AppState } from "./slice/appSlice";
+import apiReducer, { ApiState } from "./slice/apiSlice";
+import formReducer, { FormState } from "./slice/formSlice";
+import modalReducer, { ModalState } from "./slice/modalSlice";
+import dataReducer, { DataState } from "./slice/dataSlice";
 
 export const store = configureStore({
   reducer: {
@@ -16,5 +16,14 @@ export const store = configureStore({
     data: dataReducer,
   },
 });
+
+export type RootState = {
+  api: ApiState;
+  loader: LoaderState;
+  app: AppState;
+  form: FormState;
+  modal: ModalState;
+  data: DataState;
+};
 
 export default store;

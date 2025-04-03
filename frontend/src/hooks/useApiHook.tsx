@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 // import toast from "react-hot-toast";
 // import { useDispatch } from "react-redux";
 
-const axiosInstance = axios.create({
+export const apiCall = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/",
   headers: {
     "Content-Type": "application/json",
@@ -51,7 +51,7 @@ const useApiHook = () => {
         ...header,
       };
       if (needLoader) dispatch(loaderChange({ name: loaderName, value: true }));
-      const response = await axiosInstance({
+      const response = await apiCall({
         method,
         url: endPoint,
         data,
@@ -68,7 +68,6 @@ const useApiHook = () => {
         dispatch(loaderChange({ name: loaderName, value: false }));
       if (axios.isAxiosError(e)) {
         if (showToastMessage) toast.error(e.response?.data?.message);
-        console.log("csdv", e.response?.data);
         return e.response?.data;
       } else {
         console.error("Unexpected Error:", e);
