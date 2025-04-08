@@ -18,6 +18,11 @@ const getSession = async (req, res) => {
       },
     });
   } catch (error) {
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
     res.status(500).json({
       success: false,
       message: "Internal server error",

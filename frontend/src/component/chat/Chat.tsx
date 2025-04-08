@@ -1,54 +1,39 @@
 "use client";
 import useApiHook from "@/hooks/useApiHook";
 import { addData } from "@/redux/slice/apiSlice";
+import { addPayloadData } from "@/redux/slice/dataSlice";
 import { Chat, UserInfo } from "@/types/chat";
-import { getOtherUser, getUserInfo } from "@/utils/customFunc";
-import { Add, AttachFile, Send } from "@mui/icons-material";
-import {
-  Box,
-  Drawer,
-  IconButton,
-  InputAdornment,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { MessageType } from "@/types/messgae";
+import { getOtherUser, getStateData, getUserInfo } from "@/utils/customFunc";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import io from "socket.io-client";
-import AddChat from "./AddChat";
-import ChatList from "./ChatList";
+import ChatPresentation from "./ChatPresentation";
 const socket = io("http://localhost:5000", {
   transports: ["websocket"],
 });
 
 const ChatApp: React.FC = () => {
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [search, setSearch] = useState("");
-  const [message, setMessage] = useState("");
-  const [openModal, setOpenModal] = useState(false);
   const dispatch = useDispatch();
   const { api } = useApiHook();
   const userInfo = useSelector(getUserInfo()) as UserInfo;
-  console.log("selectedChat", selectedChat);
+  const [message, setMessage] = useState("");
+  const selectedChat = useSelector(getStateData("selectedChat")) as Chat | null;
+  const messages = useSelector(getStateData("message")) as MessageType[] | null;
 
   useEffect(() => {
     socket.on("connect", () => {
       console.log("Connected to Socket.IO server");
     });
 
-    socket.on("connect_error", (error) => {
-      console.error("Connection error:", error);
-    });
+    socket.emit("join-user", userInfo?._id);
 
     socket.on("message", (message) => {
       console.log("message", message);
     });
 
     return () => {
-      socket.off("connect");
-      socket.off("connect_error");
-      socket.off("message");
+      socket.disconnect();
     };
   }, []);
 
@@ -58,13 +43,17 @@ const ChatApp: React.FC = () => {
         endPoint: "chat",
         method: "GET",
       });
-
       if (result?.success) {
         const checkListToSet = result?.data?.map((item: Chat) => ({
           ...item,
           user: getOtherUser(item?.members, userInfo?._id),
         }));
-        setSelectedChat(checkListToSet[0]);
+        dispatch(
+          addPayloadData({
+            data: checkListToSet[0],
+            name: "selectedChat",
+          })
+        );
         dispatch(
           addData({
             data: checkListToSet,
@@ -76,134 +65,51 @@ const ChatApp: React.FC = () => {
     getData();
   }, []);
 
+  const sendMessage = () => {
+    setMessage("");
+    socket.emit("send-message", {
+      chatId: selectedChat?._id,
+      content: message,
+    });
+  };
+
+  const getChatData = async () => {
+    const result = await api({
+      endPoint: `chat/${selectedChat?._id}/messages`,
+      method: "GET",
+    });
+    console.log("result", result);
+    if (result?.success) {
+      dispatch(
+        addPayloadData({
+          data: result?.data,
+          name: "message",
+        })
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (selectedChat?._id) {
+      const timeId = setTimeout(() => {
+        getChatData();
+      }, 300);
+      return () => clearTimeout(timeId);
+    }
+  }, [selectedChat?._id]);
+
   return (
-    <Stack
-      direction="row"
-      height="100vh"
-      sx={{ backgroundColor: "background.default", color: "text.primary" }}
-    >
-      {/* Chat Sidebar */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: 308,
-          flexShrink: 0,
-          backgroundColor: "background.paper",
-          color: "text.primary",
+    <>
+      <ChatPresentation
+        {...{
+          message,
+          setMessage,
+          sendMessage,
+          messages,
+          userInfo,
         }}
-      >
-        <Box
-          p={2}
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-        >
-          <TextField
-            fullWidth
-            label="Search"
-            variant="outlined"
-            size="small"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            sx={{
-              input: { color: "text.primary" },
-              label: { color: "text.secondary" },
-            }}
-          />
-          <IconButton onClick={() => setOpenModal(true)}>
-            <Add />
-          </IconButton>
-        </Box>
-        <Stack>
-          <ChatList />
-        </Stack>
-      </Drawer>
-
-      {/* Chat Window */}
-      <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        sx={{ backgroundColor: "background.default", color: "text.primary" }}
-        // ml="308px"
-      >
-        {/* Header */}
-        <Box
-          p={2}
-          sx={{
-            borderBottom: "1px solid #444",
-            position: "sticky",
-            top: 0,
-            backgroundColor: "background.paper",
-          }}
-        >
-          <Typography variant="h6">{selectedChat?.user?.name}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {/* {selectedChat?.lastSeen} */}1 Hour ago
-          </Typography>
-        </Box>
-
-        {/* Chat Messages */}
-        <Stack spacing={1} flex={1} p={2} overflow="auto">
-          {/* {selectedChat.messages.map((msg, index) => (
-            <Paper
-              key={index}
-              sx={{
-                p: 2,
-                maxWidth: "75%",
-                alignSelf: msg.sender === "Me" ? "flex-end" : "flex-start",
-                backgroundColor: msg.sender === "Me" ? "#0b93f6" : "#444",
-                color: "#fff",
-                borderRadius:
-                  msg.sender === "Me"
-                    ? "10px 10px 0px 10px"
-                    : "10px 10px 10px 0px",
-              }}
-            >
-              <Typography variant="body1">{msg.text}</Typography>
-            </Paper>
-          ))} */}
-        </Stack>
-
-        {/* Message Input and File Upload */}
-        <Box
-          p={2}
-          sx={{
-            borderTop: "1px solid #444",
-            position: "sticky",
-            bottom: 0,
-            backgroundColor: "background.paper",
-          }}
-        >
-          <TextField
-            fullWidth
-            variant="outlined"
-            placeholder="Type a message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <IconButton>
-                    <AttachFile />
-                  </IconButton>
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton>
-                    <Send />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            sx={{ input: { color: "text.primary" } }}
-          />
-        </Box>
-      </Box>
-
-      <AddChat {...{ openModal, setOpenModal }} />
-    </Stack>
+      />
+    </>
   );
 };
 

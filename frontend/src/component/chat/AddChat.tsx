@@ -1,19 +1,21 @@
 import useApiHook from "@/hooks/useApiHook";
 import MUITextField from "@/shared/MUITextField";
+import { getModal, modalToggle } from "@/utils/customFunc";
 import { Box, Button, Modal } from "@mui/material";
-import { Dispatch, SetStateAction } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 
-type AddChatProps = {
-  openModal: boolean;
-  setOpenModal: Dispatch<SetStateAction<boolean>>;
-};
 interface submitProps {
   email: string;
 }
 
-const AddChat = ({ openModal, setOpenModal }: AddChatProps) => {
+const AddChat = () => {
+  const addChatModal = useSelector(getModal("addChat"));
   const { api } = useApiHook();
+  const dispatch = useDispatch();
+  const toggleAddChatModal = () => {
+    modalToggle({ dispatch, name: "addChat" });
+  };
 
   const {
     control,
@@ -34,12 +36,12 @@ const AddChat = ({ openModal, setOpenModal }: AddChatProps) => {
       showToastMessage: true,
     });
     if (response?.success) {
-      setOpenModal(false);
+      toggleAddChatModal();
     }
   };
 
   return (
-    <Modal open={openModal} onClose={() => setOpenModal(false)}>
+    <Modal open={!!addChatModal} onClose={toggleAddChatModal}>
       <Box p={3} bgcolor="background.paper" mx="auto" my={5} borderRadius={2}>
         <Controller
           name="email"
