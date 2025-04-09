@@ -27,6 +27,9 @@ export const getOtherUser = (users: User[], currentId: string): User | null => {
 export const getStateData = (name: string) => (state: StateType) =>
   state?.data?.[name];
 
+export const getChatData = (id: string) => (state: StateType) =>
+  state?.data?.chat?.[id];
+
 export const modalToggle = ({
   dispatch,
   name,

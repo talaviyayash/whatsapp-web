@@ -11,7 +11,13 @@ const messageSocketHandler = (io) => {
 
     socket.on(
       "send-message",
-      async ({ chatId, content, messageType = "text", fileUrl = null }) => {
+      async ({
+        chatId,
+        content,
+        messageType = "text",
+        fileUrl = null,
+        nanoId,
+      }) => {
         const newMessage = await Message.create({
           sender: socket?.userId,
           chat: chatId,
@@ -20,17 +26,19 @@ const messageSocketHandler = (io) => {
           fileUrl,
           readBy: [socket?.userId],
         });
-        const populatedMessage = await Message.findById(newMessage._id)
-          .populate("sender", "name email")
-          .populate("chat");
+        const populatedMessage = await Message.findById(
+          newMessage._id
+        ).populate("chat");
+        const plainMessage = populatedMessage?.toObject();
 
-        populatedMessage.chat.members.forEach((memberId) => {
-          io.to(`user:${memberId.toString()}`).emit(
-            "message",
-            populatedMessage
-          );
+        plainMessage.chat.members.forEach((memberId) => {
+          io.to(`user:${memberId.toString()}`).emit("message", {
+            ...plainMessage,
+            chat: plainMessage?.chat?._id,
+            nanoId,
+          });
         });
-        return populatedMessage;
+        return plainMessage;
       }
     );
 

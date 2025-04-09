@@ -22,7 +22,6 @@ const ProtectedLayout = ({
     //     method: "GET",
     //   });
     //   setIsLoading(false);
-    //   console.log("isLoading", isLoading);
 
     //   if (result?.success) {
     //     dispatch(addProfile(result?.data?.user));

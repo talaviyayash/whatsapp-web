@@ -8,12 +8,9 @@ const getMessagesByChatId = async (req, res) => {
   }
 
   try {
-    const messages = await Message.find({ chat: chatId })
-      .sort({ createdAt: -1 }) // Newest messages first
-      .populate("sender", "email name")
-      .populate("chat");
-
-    console.log("messages", messages);
+    const messages = await Message.find({ chat: chatId }).sort({
+      createdAt: 1,
+    });
 
     res.status(200).json({
       data: messages,

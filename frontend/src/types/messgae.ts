@@ -16,13 +16,14 @@ export type Chat = {
 
 export type MessageType = {
   _id: string;
-  sender: User;
-  chat: Chat;
+  sender: string;
+  chat: string;
   content: string;
-  messageType: "text" | "image" | "video" | "file"; // you can extend as needed
-  fileUrl: string | null;
-  readBy: string[]; // or User[] if populated
-  createdAt: string; // or Date
-  updatedAt: string; // or Date
-  __v: number;
+  messageType: "text" | "image" | "video" | "file";
+  fileUrl?: string | null;
+  readBy: string[];
+  createdAt: string;
+  updatedAt: string;
+  nanoId?: string;
+  __v?: number;
 };
