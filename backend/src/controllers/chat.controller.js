@@ -29,6 +29,7 @@ const getAllChats = async (req, res) => {
     const chats = await Chat.find({ members: req.user._id })
       .populate("members", "email name")
       .populate("lastMessage");
+
     res
       .status(200)
       .json({ data: chats, message: "Chat get Successfully", success: true });

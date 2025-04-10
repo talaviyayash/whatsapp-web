@@ -1,11 +1,7 @@
 "use client";
 import useApiHook from "@/hooks/useApiHook";
 import { addData } from "@/redux/slice/apiSlice";
-import {
-  addMessage,
-  addNewMessage,
-  addPayloadData,
-} from "@/redux/slice/dataSlice";
+import { addNewMessage, addPayloadData } from "@/redux/slice/dataSlice";
 import { Chat, UserInfo } from "@/types/chat";
 import { MessageType } from "@/types/messgae";
 import {
@@ -18,10 +14,14 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import io from "socket.io-client";
 import ChatPresentation from "./ChatPresentation";
-import { nanoid } from "@reduxjs/toolkit";
 export const socket = io("http://localhost:5000", {
   transports: ["websocket"],
 });
+
+type SocketMessage = {
+  message: MessageType;
+  chat: Chat;
+};
 
 const ChatApp: React.FC = () => {
   const dispatch = useDispatch();
@@ -42,10 +42,7 @@ const ChatApp: React.FC = () => {
 
     socket.emit("join-user", userInfo?._id);
 
-    socket.on("message", (message: MessageType) => {
-      if (message?.sender === userInfo?._id) {
-        setScrollToBottom(true);
-      }
+    socket.on("message", ({ message }: SocketMessage) => {
       dispatch(addNewMessage({ data: message, name: message?.chat }));
     });
 
@@ -82,75 +79,12 @@ const ChatApp: React.FC = () => {
     getData();
   }, []);
 
-  const sendMessage = () => {
-    if (!selectedChat) return;
-    setMessage("");
-    const nanoId = nanoid();
-    socket.emit("send-message", {
-      chatId: selectedChat?._id,
-      content: message,
-      nanoId,
-    });
-    dispatch(
-      addMessage({
-        data: [
-          {
-            _id: "",
-            content: message,
-            nanoId,
-            chat: selectedChat?._id,
-            sender: userInfo?._id,
-            createdAt: new Date().toISOString(),
-            messageType: "text",
-            readBy: [],
-            updatedAt: new Date().toISOString(),
-          },
-        ],
-        name: selectedChat?._id,
-      })
-    );
-    setScrollToBottom(true);
-    // dispatch(addMessage({ data: [{ _id: "",  chat }], name: message?.chat?._id }));
-  };
-
-  const getChat = async () => {
-    const result = await api({
-      endPoint: `chat/${selectedChat?._id}/messages`,
-      method: "GET",
-    });
-    if (result?.success) {
-      dispatch(
-        addPayloadData({
-          data: result?.data,
-          name: "message",
-        })
-      );
-      dispatch(
-        addMessage({
-          data: result?.data,
-          name: selectedChat?._id || "",
-        })
-      );
-      setScrollToBottom(true);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedChat?._id) {
-      const timeId = setTimeout(() => {
-        getChat();
-      }, 300);
-      return () => clearTimeout(timeId);
-    }
-  }, [selectedChat?._id]);
-
   return (
     <>
       <ChatPresentation
         {...{
           message,
           setMessage,
-          sendMessage,
           messages,
           userInfo,
           scrollToBottom,

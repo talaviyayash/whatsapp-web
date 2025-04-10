@@ -1,21 +1,29 @@
+import useApiHook from "@/hooks/useApiHook";
 import { addMessage } from "@/redux/slice/dataSlice";
 import { Chat, UserInfo } from "@/types/chat";
 import { MessageType } from "@/types/messgae";
 import { getChatData, getStateData, getUserInfo } from "@/utils/customFunc";
 import { AttachFile, Send } from "@mui/icons-material";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import {
   Box,
   IconButton,
   InputAdornment,
   Paper,
-  Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { nanoid } from "@reduxjs/toolkit";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import AutoSizer from "react-virtualized-auto-sizer";
+import { FixedSizeList as List } from "react-window";
 import { socket } from "../Chat";
+
+// type Props = {
+//   index: number;
+//   style: React.CSSProperties;
+// };
 
 const ChatWindow = () => {
   const userInfo = useSelector(getUserInfo()) as UserInfo;
@@ -23,6 +31,7 @@ const ChatWindow = () => {
   const messages = useSelector(getChatData(selectedChat?._id || "")) as
     | MessageType[]
     | null;
+  const { api } = useApiHook();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const [message, setMessage] = useState("");
   const dispatch = useDispatch();
@@ -60,10 +69,34 @@ const ChatWindow = () => {
 
   useEffect(() => {
     if (scrollToBottom) {
-      setScrollToBottom(false);
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [scrollToBottom]);
+
+  const getChat = async () => {
+    const result = await api({
+      endPoint: `chat/${selectedChat?._id}/messages`,
+      method: "GET",
+    });
+    if (result?.success) {
+      dispatch(
+        addMessage({
+          data: result?.data,
+          name: selectedChat?._id || "",
+        })
+      );
+      setScrollToBottom(true);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedChat?._id) {
+      const timeId = setTimeout(() => {
+        getChat();
+      }, 300);
+      return () => clearTimeout(timeId);
+    }
+  }, [selectedChat?._id]);
 
   return (
     <>
@@ -88,29 +121,68 @@ const ChatWindow = () => {
           </Typography>
         </Box>
 
-        <Stack spacing={1} flex={1} p={2} overflow="auto">
-          {messages?.map((msg, index) => (
-            <Paper
-              key={index}
-              sx={{
-                p: 2,
-                maxWidth: "75%",
-                alignSelf:
-                  msg?.sender === userInfo?._id ? "flex-end" : "flex-start",
-                backgroundColor:
-                  msg?.sender === userInfo?._id ? "#0b93f6" : "#444",
-                color: "#fff",
-                borderRadius:
-                  msg?.sender === userInfo?._id
-                    ? "10px 10px 0px 10px"
-                    : "10px 10px 10px 0px",
-              }}
-            >
-              <Typography variant="body1">{msg.content}</Typography>
-            </Paper>
-          ))}
-          <Box ref={messagesEndRef} />
-        </Stack>
+        <Box flex={1} p={2} overflow="hidden">
+          <AutoSizer>
+            {({ height, width }) => (
+              <List
+                height={height}
+                itemCount={messages?.length || 0}
+                itemSize={70}
+                width={width}
+                // onScroll={({ scrollOffset }) => {
+                //   // Optional: Handle scroll events if needed
+                // }}
+              >
+                {({
+                  index,
+                  style,
+                }: {
+                  index: number;
+                  style: React.CSSProperties;
+                }) => {
+                  const msg = messages?.[index];
+                  return (
+                    <Box
+                      key={index}
+                      sx={{
+                        ...style,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems:
+                          msg?.sender === userInfo?._id
+                            ? "flex-end"
+                            : "flex-start",
+                      }}
+                    >
+                      <Paper
+                        sx={{
+                          p: 2,
+                          maxWidth: "75%",
+                          backgroundColor:
+                            msg?.sender === userInfo?._id ? "#0b93f6" : "#444",
+                          color: "#fff",
+                          borderRadius:
+                            msg?.sender === userInfo?._id
+                              ? "10px 10px 0px 10px"
+                              : "10px 10px 10px 0px",
+                        }}
+                      >
+                        <Typography variant="body1">{msg?.content}</Typography>
+                      </Paper>
+
+                      {msg?.sender === userInfo?._id && !msg?._id && (
+                        <AccessTimeIcon
+                          sx={{ fontSize: 14, color: "#ccc", mt: 0.5, mr: 1 }}
+                        />
+                      )}
+                    </Box>
+                  );
+                }}
+              </List>
+            )}
+          </AutoSizer>
+          <Box ref={messagesEndRef} style={{ height: 0 }} />
+        </Box>
 
         <Box
           p={2}

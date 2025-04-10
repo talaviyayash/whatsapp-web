@@ -1,3 +1,4 @@
+import Chat from "../modal/chat.modal.js";
 import Message from "../modal/message.modal.js";
 
 const messageSocketHandler = (io) => {
@@ -31,11 +32,22 @@ const messageSocketHandler = (io) => {
         ).populate("chat");
         const plainMessage = populatedMessage?.toObject();
 
+        const updatedChat = await Chat.findByIdAndUpdate(
+          chatId,
+          { lastMessage: newMessage._id },
+          { new: true }
+        )
+          .populate("members", "email name")
+          .populate("lastMessage");
+
         plainMessage.chat.members.forEach((memberId) => {
           io.to(`user:${memberId.toString()}`).emit("message", {
-            ...plainMessage,
-            chat: plainMessage?.chat?._id,
-            nanoId,
+            chat: updatedChat,
+            message: {
+              ...plainMessage,
+              chat: plainMessage?.chat?._id,
+              nanoId,
+            },
           });
         });
         return plainMessage;

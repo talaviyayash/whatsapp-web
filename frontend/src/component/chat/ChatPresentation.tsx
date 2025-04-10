@@ -9,7 +9,6 @@ import ChatWindow from "./chatWindow/ChatWindow";
 interface ChatPresentationProps {
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
-  sendMessage: () => void;
   messages: MessageType[] | null;
   userInfo: UserInfo;
   scrollToBottom: boolean;
